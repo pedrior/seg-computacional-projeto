@@ -1,0 +1,168 @@
+<ui:FluentWindow
+    x:Class="Guardian.Views.MainView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:Guardian.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vms="clr-namespace:Guardian.ViewModels"
+    Title="Guardian"
+    Width="320"
+    Height="680"
+    MinWidth="320"
+    MinHeight="600"
+    d:DataContext="{d:DesignInstance vms:MainViewModel,
+                                     IsDesignTimeCreatable=False}"
+    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+    ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ResizeMode="NoResize"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <system:String x:Key="ProtectionEnabledText">Proteção ativada</system:String>
+            <system:String x:Key="ProtectionDisabledText">Proteção desativada</system:String>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar
+            Title="Guardian"
+            Grid.Row="0"
+            Width="320"
+            CanMaximize="False"
+            ShowMaximize="False" />
+
+        <Border Grid.Row="1" Padding="8,0,8,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Border Margin="0,24">
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock
+                            MaxWidth="200"
+                            VerticalAlignment="Center"
+                            TextAlignment="Center"
+                            TextTrimming="CharacterEllipsis"
+                            ToolTip="Total de requisições bloqueadas pelo filtro de proteção">
+
+                            <Run FontSize="24" Text="Bloqueado" />
+                            <LineBreak />
+                            <Run
+                                FontSize="36"
+                                FontWeight="Bold"
+                                Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                                Text="{Binding TotalBlockedRequests, Mode=OneWay}" />
+                        </TextBlock>
+
+                        <TextBlock
+                            MaxWidth="250"
+                            Margin="0,18,0,0"
+                            FontSize="14"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            TextAlignment="Center"
+                            TextTrimming="CharacterEllipsis"
+                            ToolTip="Total de requisições processadas pelo filtro de proteção">
+
+                            <Run Text="Total de requisições" />
+                            <Run Text="{Binding TotalRequests, Mode=OneWay}" />
+                        </TextBlock>
+                        <ToggleButton
+                            Width="200"
+                            Height="60"
+                            Margin="0,48,0,0"
+                            HorizontalAlignment="Center"
+                            Command="{Binding ToggleProtectionCommand, Mode=OneTime}"
+                            Content="{Binding IsProtectionEnabled, Mode=OneWay, Converter={converters:BooleanToProtectionTextConverter TrueText={StaticResource ProtectionEnabledText}, FalseText={StaticResource ProtectionDisabledText}}}"
+                            Cursor="Hand" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="2" Margin="0,12,0,0">
+                    <StackPanel Margin="12,0">
+                        <TextBlock Margin="0,0,0,12" Text="Filtros" />
+                        <ScrollViewer MaxHeight="190">
+                            <StackPanel>
+                                <StackPanel Margin="0,0,0,8">
+                                    <ui:ToggleSwitch Content="Padrão (recomendado)" IsChecked="{Binding UseDefaultFilter, Mode=OneWayToSource}" />
+                                    <TextBlock
+                                        Margin="0,4,0,0"
+                                        FontSize="11"
+                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                        Text="Bloqueia anúncios, rastreamento, telemetria, phishing, malware, fraude, cryptojacking, entre outros"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,8">
+                                    <ui:ToggleSwitch Content="Rastreadores (Windows)" IsChecked="{Binding UseTrackersFilter, Mode=OneWayToSource}" />
+                                    <TextBlock
+                                        Margin="0,4,0,0"
+                                        FontSize="11"
+                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                        Text="Bloqueia o rastreador nativos de dispositivos, serviços e sistemas operacionais."
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,8">
+                                    <ui:ToggleSwitch Content="Jogos de azar" IsChecked="{Binding UseGamblingFilter, Mode=OneWayToSource}" />
+                                    <TextBlock
+                                        Margin="0,4,0,0"
+                                        FontSize="11"
+                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                        Text="Bloqueia sites de jogos de azar, apostas, cassinos, entre outros"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,8">
+                                    <ui:ToggleSwitch Content="NFSW" IsChecked="{Binding UseNfswFilter, Mode=OneWayToSource}" />
+                                    <TextBlock
+                                        Margin="0,4,0,0"
+                                        FontSize="11"
+                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                        Text="Bloqueia conteúdo adulto e impróprio para menores de idade"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <StackPanel
+                            Margin="0,20,0,0"
+                            HorizontalAlignment="Left"
+                            Orientation="Horizontal">
+
+                            <ui:Button
+                                Margin="0,0,8,0"
+                                Command="{Binding EditBlacklistCommand, Mode=OneTime}"
+                                Content="Lista de bloqueio"
+                                ToolTip="Adicione domínios personalizados à lista de bloqueio" />
+
+                            <ui:Button
+                                Command="{Binding EditWhitelistCommand}"
+                                Content="Lista de permissão"
+                                ToolTip="Adicione domínios personalizados à lista de permissões" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock
+                    Grid.Row="3"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                    ToolTip="Endereço IP e porta do servidor de proteção">
+                    <Run Text="127.0.0.1:8888" />
+                </TextBlock>
+            </Grid>
+        </Border>
+    </Grid>
+</ui:FluentWindow>
