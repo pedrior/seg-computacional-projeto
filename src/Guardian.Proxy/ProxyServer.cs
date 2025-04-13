@@ -10,8 +10,19 @@ public sealed partial class ProxyServer : IDisposable
 {
     public const string HttpEndOfHeader = "\r\n\r\n";
     public const string HttpsConnectMethod = "CONNECT";
-    
-    private const int BufferSize = 8192;
+
+    private static readonly string[] KnownHttpMethods =
+    [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "HEAD",
+        "OPTIONS",
+        "PATCH"
+    ];
+
+    private const int BufferSize = 512;
     private const int SendTimeoutMs = 30_000;
     private const int ReceiveTimeoutMs = 30_000;
 
@@ -29,7 +40,7 @@ public sealed partial class ProxyServer : IDisposable
             SocketOptionName.ReuseAddress,
             true);
     }
-    
+
     public Func<string, bool>? Filter { get; private set; }
 
     public async Task StartAsync()
@@ -69,7 +80,7 @@ public sealed partial class ProxyServer : IDisposable
         cts.Cancel();
         listener.Stop();
     }
-    
+
     public void UseFilter(Func<string, bool> filter) => Filter = filter;
 
     public void Dispose()
@@ -102,14 +113,14 @@ public sealed partial class ProxyServer : IDisposable
                     var bytesRead = await stream.ReadAsync(buffer, cancellation)
                         .ConfigureAwait(false);
 
-                    if (bytesRead <= 0)
+                    if (!IsEitherHttpOrHttps(buffer, bytesRead))
                     {
-                        return; // No data received
+                        return; // Not a valid HTTP or HTTPS request
                     }
 
                     // Parse the request line to get the method, URL, and HTTP version
                     var (method, url, version) = ParseRequestLine(buffer, bytesRead);
-                    
+
                     if (Filter is not null && !Filter(url))
                     {
                         return; // URL is filtered
@@ -140,6 +151,16 @@ public sealed partial class ProxyServer : IDisposable
         {
             Debug.WriteLine($"Client handling error: {ex.Message}");
         }
+    }
+
+    private static bool IsEitherHttpOrHttps(byte[] buffer, int bytesRead)
+    {
+        const StringComparison comparison = StringComparison.OrdinalIgnoreCase;
+        var data = Encoding.ASCII.GetString(buffer, index: 0, bytesRead);
+
+        // Check if it's HTTP (starts with "GET", "POST", etc.) or HTTPS (starts with "CONNECT")
+        return KnownHttpMethods.Any(method => data.StartsWith(method, comparison)) ||
+               data.StartsWith(HttpsConnectMethod, comparison);
     }
 
     private static (string method, string url, string version) ParseRequestLine(byte[] buffer, int bytesRead)
