@@ -1,9 +1,11 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Guardian.Filters;
+using Guardian.Models;
 using Guardian.Proxy;
 using Guardian.Services;
 
@@ -13,13 +15,12 @@ public sealed partial class MainViewModel : ObservableObject
 {
     private static readonly ProxySettings ProxySettings = new("127.0.0.1", 8888);
 
-    private readonly HashSet<string> blockedUrls = [];
-    private readonly BlocklistFilter defaultBlocklistFilter = new();
-    private readonly BlocklistFilter gamblingBlocklistFilter = new();
-    private readonly BlocklistFilter nfswBlocklistFilter = new();
-    private readonly BlocklistFilter trackersBlocklistFilter = new();
-    private readonly BlocklistFilter blacklistBlocklistFilter = new();
-    private readonly BlocklistFilter whitelistBlocklistFilter = new();
+    private readonly DomainFilter defaultDomainFilter = new();
+    private readonly DomainFilter gamblingDomainFilter = new();
+    private readonly DomainFilter nfswDomainFilter = new();
+    private readonly DomainFilter trackersDomainFilter = new();
+    private readonly DomainFilter blacklistDomainFilter = new();
+    private readonly DomainFilter whitelistDomainFilter = new();
 
     private readonly ISystemProxyManager systemProxyManager;
 
@@ -72,8 +73,8 @@ public sealed partial class MainViewModel : ObservableObject
 
         await process!.WaitForExitAsync();
 
-        blacklistBlocklistFilter.Clear();
-        blacklistBlocklistFilter.LoadBlocklist(await File.ReadAllLinesAsync(path));
+        blacklistDomainFilter.Clear();
+        blacklistDomainFilter.Load(await File.ReadAllLinesAsync(path));
     }
 
     [RelayCommand]
@@ -92,19 +93,19 @@ public sealed partial class MainViewModel : ObservableObject
 
         await process!.WaitForExitAsync();
 
-        whitelistBlocklistFilter.Clear();
-        whitelistBlocklistFilter.LoadBlocklist(await File.ReadAllLinesAsync(path));
+        whitelistDomainFilter.Clear();
+        whitelistDomainFilter.Load(await File.ReadAllLinesAsync(path));
     }
 
     partial void OnUseDefaultFilterChanged(bool value)
     {
         if (value)
         {
-            defaultBlocklistFilter.LoadBlocklist(FilterLoader.LoadDefaultFilter());
+            defaultDomainFilter.Load(FilterLoader.LoadDefaultFilter());
         }
         else
         {
-            defaultBlocklistFilter.Clear();
+            defaultDomainFilter.Clear();
         }
     }
 
@@ -112,11 +113,11 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (value)
         {
-            gamblingBlocklistFilter.LoadBlocklist(FilterLoader.LoadGamblingFilter());
+            gamblingDomainFilter.Load(FilterLoader.LoadGamblingFilter());
         }
         else
         {
-            gamblingBlocklistFilter.Clear();
+            gamblingDomainFilter.Clear();
         }
     }
 
@@ -124,11 +125,11 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (value)
         {
-            nfswBlocklistFilter.LoadBlocklist(FilterLoader.LoadNsfwFilter());
+            nfswDomainFilter.Load(FilterLoader.LoadNsfwFilter());
         }
         else
         {
-            nfswBlocklistFilter.Clear();
+            nfswDomainFilter.Clear();
         }
     }
 
@@ -136,11 +137,11 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (value)
         {
-            trackersBlocklistFilter.LoadBlocklist(FilterLoader.LoadTrackersFilter());
+            trackersDomainFilter.Load(FilterLoader.LoadTrackersFilter());
         }
         else
         {
-            trackersBlocklistFilter.Clear();
+            trackersDomainFilter.Clear();
         }
     }
 
@@ -150,16 +151,16 @@ public sealed partial class MainViewModel : ObservableObject
         {
             return;
         }
-        
+
         // Load blacklist and whitelist filters
         if (File.Exists("blacklist.txt"))
         {
-            blacklistBlocklistFilter.LoadBlocklist(File.ReadAllLines("blacklist.txt"));
+            blacklistDomainFilter.Load(File.ReadAllLines("blacklist.txt"));
         }
-        
+
         if (File.Exists("whitelist.txt"))
         {
-            whitelistBlocklistFilter.LoadBlocklist(File.ReadAllLines("whitelist.txt"));
+            whitelistDomainFilter.Load(File.ReadAllLines("whitelist.txt"));
         }
 
         proxyServerWorker = new BackgroundWorker();
@@ -167,7 +168,7 @@ public sealed partial class MainViewModel : ObservableObject
         proxyServerWorker.DoWork += async (_, _) =>
         {
             proxyServer = new ProxyServer(ProxySettings.Port);
-            proxyServer.UseFilter(ProxyServerFilter);
+            proxyServer.UseFilter(UrlFilter);
 
             await proxyServer.StartAsync();
         };
@@ -193,29 +194,41 @@ public sealed partial class MainViewModel : ObservableObject
         proxyServerWorker = null;
     }
 
-    private bool ProxyServerFilter(string url)
+    private bool UrlFilter((string full, string @short) urls)
     {
         TotalRequests++;
 
-        if (whitelistBlocklistFilter.Contains(url))
+        var time = Stopwatch.GetTimestamp();
+        TimeSpan elapsed;
+        if (whitelistDomainFilter.Contains(urls.@short))
         {
+            elapsed = Stopwatch.GetElapsedTime(time);
+            NotifyUrlFiltered(new FilterResponse(urls.full, false, elapsed.Microseconds));
+
             return true;
         }
-        
-        if (blacklistBlocklistFilter.Contains(url) ||
-            defaultBlocklistFilter.Contains(url) ||
-            gamblingBlocklistFilter.Contains(url) ||
-            nfswBlocklistFilter.Contains(url) ||
-            trackersBlocklistFilter.Contains(url))
+
+        if (blacklistDomainFilter.Contains(urls.@short) ||
+            defaultDomainFilter.Contains(urls.@short) ||
+            gamblingDomainFilter.Contains(urls.@short) ||
+            nfswDomainFilter.Contains(urls.@short) ||
+            trackersDomainFilter.Contains(urls.@short))
         {
-            if (blockedUrls.Add(url))
-            {
-                TotalBlockedRequests++;
-            }
+            elapsed = Stopwatch.GetElapsedTime(time);
+            NotifyUrlFiltered(new FilterResponse(urls.full, true, elapsed.Microseconds));
+
+            TotalBlockedRequests++;
 
             return false;
         }
 
+        elapsed = Stopwatch.GetElapsedTime(time);
+        NotifyUrlFiltered(new FilterResponse(urls.full, false, elapsed.Microseconds));
+        
         return true;
     }
+    
+    private void NotifyUrlFiltered(FilterResponse item) => UrlFiltered?.Invoke(this, item);
+
+    public event EventHandler<FilterResponse>? UrlFiltered;
 }

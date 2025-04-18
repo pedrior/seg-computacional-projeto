@@ -8,8 +8,8 @@
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vms="clr-namespace:Guardian.ViewModels"
-    Title="Guardian"
-    Width="320"
+    Title="Guardian - 127.0.0.1:8888"
+    Width="896"
     Height="680"
     MinWidth="320"
     MinHeight="600"
@@ -29,20 +29,21 @@
     </Window.Resources>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"></ColumnDefinition>
+            <ColumnDefinition Width="Auto"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        
         <ui:TitleBar
-            Title="Guardian"
-            Grid.Row="0"
-            Width="320"
+            Title="Guardian - 127.0.0.1:8888"
+            Grid.Column="0"
+            Grid.ColumnSpan="3"
             CanMaximize="False"
             ShowMaximize="False" />
 
-        <Border Grid.Row="1" Padding="8,0,8,16">
-            <Grid>
+        <Grid Width="320" Margin="0,40,0,0" Grid.Row="0" Grid.Column="0">
+            <Grid Margin="8,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -94,10 +95,11 @@
                 <Border Grid.Row="2" Margin="0,12,0,0">
                     <StackPanel Margin="12,0">
                         <TextBlock Margin="0,0,0,12" Text="Filtros" />
-                        <ScrollViewer MaxHeight="190">
+                        <ScrollViewer>
                             <StackPanel>
                                 <StackPanel Margin="0,0,0,8">
-                                    <ui:ToggleSwitch Content="Padrão (recomendado)" IsChecked="{Binding UseDefaultFilter, Mode=OneWayToSource}" />
+                                    <ui:ToggleSwitch Content="Padrão (recomendado)"
+                                                     IsChecked="{Binding UseDefaultFilter, Mode=OneWayToSource}" />
                                     <TextBlock
                                         Margin="0,4,0,0"
                                         FontSize="11"
@@ -106,7 +108,8 @@
                                         TextWrapping="Wrap" />
                                 </StackPanel>
                                 <StackPanel Margin="0,0,0,8">
-                                    <ui:ToggleSwitch Content="Rastreadores (Windows)" IsChecked="{Binding UseTrackersFilter, Mode=OneWayToSource}" />
+                                    <ui:ToggleSwitch Content="Rastreadores (Windows)"
+                                                     IsChecked="{Binding UseTrackersFilter, Mode=OneWayToSource}" />
                                     <TextBlock
                                         Margin="0,4,0,0"
                                         FontSize="11"
@@ -115,7 +118,8 @@
                                         TextWrapping="Wrap" />
                                 </StackPanel>
                                 <StackPanel Margin="0,0,0,8">
-                                    <ui:ToggleSwitch Content="Jogos de azar" IsChecked="{Binding UseGamblingFilter, Mode=OneWayToSource}" />
+                                    <ui:ToggleSwitch Content="Jogos de azar"
+                                                     IsChecked="{Binding UseGamblingFilter, Mode=OneWayToSource}" />
                                     <TextBlock
                                         Margin="0,4,0,0"
                                         FontSize="11"
@@ -124,7 +128,8 @@
                                         TextWrapping="Wrap" />
                                 </StackPanel>
                                 <StackPanel Margin="0,0,0,8">
-                                    <ui:ToggleSwitch Content="NFSW" IsChecked="{Binding UseNfswFilter, Mode=OneWayToSource}" />
+                                    <ui:ToggleSwitch Content="NFSW"
+                                                     IsChecked="{Binding UseNfswFilter, Mode=OneWayToSource}" />
                                     <TextBlock
                                         Margin="0,4,0,0"
                                         FontSize="11"
@@ -152,17 +157,31 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
-
-                <TextBlock
-                    Grid.Row="3"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    FontSize="12"
-                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                    ToolTip="Endereço IP e porta do servidor de proteção">
-                    <Run Text="127.0.0.1:8888" />
-                </TextBlock>
             </Grid>
-        </Border>
+        </Grid>
+
+        <ui:NavigationViewItemSeparator Grid.Row="0" Grid.Column="1"></ui:NavigationViewItemSeparator>
+        
+        <Grid  Grid.Column="2" Margin="8,40,8,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Todas as requisições HTTP/HTTPS:" Foreground="{DynamicResource TextFillColorSecondaryBrush}"></TextBlock>
+            <RichTextBox  Name="RequestsLog" Grid.Row="1" BorderThickness="0" Background="Transparent" IsReadOnly="True" >
+                <FlowDocument FontSize="13" FontFamily="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:FluentWindow}, AncestorLevel=1}, Path=FontFamily}" LineHeight="0.2">
+                    <Paragraph  TextAlignment="Left" Foreground="#f22c3d">
+                        <Span>B | </Span>
+                        <Span>854us | </Span>
+                        <Span>https://chatgpt.com/c/6802b76f-151c-8011-83d155</Span>
+                    </Paragraph>
+                    <Paragraph TextAlignment="Left" Foreground="#00a67d">
+                        <Span>P | </Span>
+                        <Span>854us | </Span>
+                        <Span>https://chatgpt.com/c/6802b76f-151c-8011-83d155</Span>
+                    </Paragraph>
+                </FlowDocument>
+            </RichTextBox>
+        </Grid>
     </Grid>
 </ui:FluentWindow>

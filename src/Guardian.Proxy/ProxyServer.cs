@@ -41,7 +41,7 @@ public sealed partial class ProxyServer : IDisposable
             true);
     }
 
-    public Func<string, bool>? Filter { get; private set; }
+    public Func<(string full, string domain), bool>? Filter { get; private set; }
 
     public async Task StartAsync()
     {
@@ -81,7 +81,7 @@ public sealed partial class ProxyServer : IDisposable
         listener.Stop();
     }
 
-    public void UseFilter(Func<string, bool> filter) => Filter = filter;
+    public void UseFilter(Func<(string full, string domain), bool> filter) => Filter = filter;
 
     public void Dispose()
     {
@@ -119,9 +119,10 @@ public sealed partial class ProxyServer : IDisposable
                     }
 
                     // Parse the request line to get the method, URL, and HTTP version
-                    var (method, url, version) = ParseRequestLine(buffer, bytesRead);
+                    var line = GetRequestLine(buffer, bytesRead);
+                    var (method, url, version) = ParseRequestLine(line.Split(' '));
 
-                    if (Filter is not null && !Filter(url))
+                    if (Filter is not null && !Filter((line, url)))
                     {
                         return; // URL is filtered
                     }
@@ -163,11 +164,8 @@ public sealed partial class ProxyServer : IDisposable
                data.StartsWith(HttpsConnectMethod, comparison);
     }
 
-    private static (string method, string url, string version) ParseRequestLine(byte[] buffer, int bytesRead)
+    private static (string method, string url, string version) ParseRequestLine(string[] segments)
     {
-        var segments = GetRequestLine(buffer, bytesRead)
-            .Split(' ');
-
         return segments.Length < 3
             ? throw new InvalidOperationException("Invalid request line")
             : (segments[0], segments[1], segments[2]);

@@ -9,13 +9,13 @@ internal static class FilterLoader
     private const string NsfwFilterName = "nsfw.txt";
     private const string TrackersFilterName = "trackers.txt";
 
-    public static IEnumerable<string> LoadDefaultFilter() => LoadEntries(DefaultFilterName);
+    public static string[] LoadDefaultFilter() => LoadEntries(DefaultFilterName);
 
-    public static IEnumerable<string> LoadGamblingFilter() => LoadEntries(GamblingFilterName);
+    public static string[] LoadGamblingFilter() => LoadEntries(GamblingFilterName);
 
-    public static IEnumerable<string> LoadNsfwFilter() => LoadEntries(NsfwFilterName);
+    public static string[] LoadNsfwFilter() => LoadEntries(NsfwFilterName);
 
-    public static IEnumerable<string> LoadTrackersFilter() => LoadEntries(TrackersFilterName);
+    public static string[] LoadTrackersFilter() => LoadEntries(TrackersFilterName);
 
     private static string[] LoadEntries(string filterName)
     {
